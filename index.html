@@ -308,12 +308,19 @@ function showResult(){
     <div class="result-desc">${r.desc}</div>
     <div class="tags">${r.tags.map((t,i)=>`<span class="tag" style="background:${r.tagColors[i]}22;border-color:${r.tagColors[i]};color:${r.tagColors[i]}">${t}</span>`).join('')}</div>
     ${shareButtons(r)}
-    <div style="background:#fff8f0;border:2.5px solid #ff8c42;border-radius:16px;padding:16px;margin-bottom:16px;text-align:center">
+    <div style="background:#fff8f0;border:2.5px solid #ff8c42;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center">
       <div style="font-size:12px;font-weight:900;color:#ff8c42;letter-spacing:2px;margin-bottom:10px">🛒 アニメグッズはこちら</div>
       <a href="https://px.a8.net/svt/ejp?a8mat=4AZPOO+DYHYFM+NA2+67JU9" rel="nofollow">
         <img border="0" width="300" height="250" alt="" src="https://www23.a8.net/svt/bgt?aid=260327112844&wid=005&eno=01&mid=s00000003017001043000&mc=1" style="max-width:100%;border-radius:8px">
       </a>
       <img border="0" width="1" height="1" src="https://www13.a8.net/0.gif?a8mat=4AZPOO+DYHYFM+NA2+67JU9" alt="">
+    </div>
+    <div style="background:#f0f4ff;border:2.5px solid #4169e1;border-radius:16px;padding:16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:12px;font-weight:900;color:#4169e1;letter-spacing:2px;margin-bottom:10px">📺 アニメ・映画はABEMAで！</div>
+      <a href="https://px.a8.net/svt/ejp?a8mat=44YYJH+7CCKGI+4EKC+609HT" rel="nofollow">
+        <img border="0" width="250" height="250" alt="" src="https://www24.a8.net/svt/bgt?aid=250214237444&wid=005&eno=01&mid=s00000020550001009000&mc=1" style="max-width:100%;border-radius:8px">
+      </a>
+      <img border="0" width="1" height="1" src="https://www18.a8.net/0.gif?a8mat=44YYJH+7CCKGI+4EKC+609HT" alt="">
     </div>
     <button class="retry-btn" onclick="renderStart()">🔄 もう一度診断する</button>`;
 }
