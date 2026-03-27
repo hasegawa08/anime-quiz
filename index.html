@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アニメキャラ診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #FF6B9D; --yellow: #FFD93D; --cyan: #4ECDC4;
+    --purple: #A855F7; --orange: #FF8C42; --green: #6BCB77;
+    --bg: #FFF9F0; --dark: #1a1a2e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'M PLUS Rounded 1c', sans-serif; background: var(--bg); min-height: 100vh; overflow-x: hidden; }
+
+  .bubbles { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:hidden; }
+  .bubble { position:absolute; border-radius:50%; opacity:0.12; animation: floatUp linear infinite; }
+  @keyframes floatUp {
+    0%   { transform: translateY(110vh) scale(0.8); opacity:0; }
+    10%  { opacity:0.12; }
+    90%  { opacity:0.12; }
+    100% { transform: translateY(-10vh) scale(1.2); opacity:0; }
+  }
+
+  .container { position:relative; z-index:1; max-width:620px; margin:0 auto; padding:24px 16px 60px; }
+
+  .header { text-align:center; margin-bottom:32px; animation: popIn 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  .header .badge { display:inline-block; background:var(--yellow); color:var(--dark); font-weight:900; font-size:13px; padding:4px 14px; border-radius:20px; border:2.5px solid var(--dark); margin-bottom:12px; letter-spacing:1px; box-shadow:3px 3px 0 var(--dark); }
+  .header h1 { font-family:'Zen Maru Gothic',sans-serif; font-size:clamp(28px,7vw,42px); font-weight:900; color:var(--dark); line-height:1.2; text-shadow:4px 4px 0 var(--pink),7px 7px 0 rgba(0,0,0,.08); }
+  .header p { margin-top:10px; font-size:15px; color:#666; }
+  .stars { font-size:22px; letter-spacing:4px; margin:8px 0; }
+
+  .card { background:white; border:3px solid var(--dark); border-radius:24px; padding:28px 24px; box-shadow:6px 6px 0 var(--dark); animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+
+  @keyframes popIn  { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+  @keyframes slideIn{ 0%{transform:translateX(60px);opacity:0} 100%{transform:translateX(0);opacity:1} }
+  @keyframes bounce { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+  .progress-wrap { margin-bottom:22px; }
+  .progress-label { display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#888; margin-bottom:8px; }
+  .progress-bar-bg { background:#f0f0f0; border-radius:99px; height:12px; border:2px solid var(--dark); overflow:hidden; }
+  .progress-bar-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--pink),var(--purple)); transition:width .5s cubic-bezier(0.34,1.56,0.64,1); }
+
+  .question-num { font-size:12px; font-weight:900; color:var(--purple); letter-spacing:2px; margin-bottom:8px; }
+  .question-text { font-family:'Zen Maru Gothic',sans-serif; font-size:clamp(17px,4.5vw,22px); font-weight:700; color:var(--dark); line-height:1.5; margin-bottom:24px; }
+
+  .choices { display:flex; flex-direction:column; gap:12px; }
+  .choice-btn { display:flex; align-items:center; gap:14px; background:white; border:2.5px solid var(--dark); border-radius:16px; padding:14px 18px; font-family:'M PLUS Rounded 1c',sans-serif; font-size:15px; font-weight:700; color:var(--dark); cursor:pointer; transition:transform .15s,box-shadow .15s,background .15s; box-shadow:3px 3px 0 var(--dark); text-align:left; }
+  .choice-btn:hover { transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--dark); }
+  .choice-btn:active { transform:translate(1px,1px); box-shadow:2px 2px 0 var(--dark); }
+  .choice-btn.selected { color:white; transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--dark); }
+  .choice-icon { font-size:22px; flex-shrink:0; }
+
+  .result-avatar { font-size:80px; text-align:center; margin:8px 0 16px; animation:bounce .8s cubic-bezier(0.34,1.56,0.64,1); }
+  .result-label  { text-align:center; font-size:13px; font-weight:900; letter-spacing:2px; color:var(--purple); margin-bottom:6px; }
+  .result-name   { font-family:'Zen Maru Gothic',sans-serif; text-align:center; font-size:clamp(26px,7vw,36px); font-weight:900; color:var(--dark); margin-bottom:6px; text-shadow:3px 3px 0 var(--yellow); }
+  .result-series { text-align:center; font-size:14px; color:#888; margin-bottom:20px; }
+  .result-desc   { background:#f8f4ff; border:2px solid #ddd; border-radius:16px; padding:16px; font-size:15px; line-height:1.7; color:#444; margin-bottom:20px; }
+
+  .tags { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:24px; }
+  .tag  { font-size:12px; font-weight:700; padding:5px 14px; border-radius:99px; border:2px solid var(--dark); box-shadow:2px 2px 0 var(--dark); }
+
+  /* SNS Share */
+  .share-section { margin-bottom:20px; }
+  .share-title   { text-align:center; font-size:13px; font-weight:900; color:#888; letter-spacing:2px; margin-bottom:14px; }
+  .share-grid    { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .share-btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px 10px; border-radius:14px; border:2.5px solid var(--dark);
+    font-family:'M PLUS Rounded 1c',sans-serif; font-size:14px; font-weight:900;
+    cursor:pointer; box-shadow:3px 3px 0 var(--dark);
+    transition:transform .15s,box-shadow .15s; text-decoration:none; color:white;
+    background:var(--dark);
+  }
+  .share-btn:hover  { transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--dark); }
+  .share-btn:active { transform:translate(1px,1px);   box-shadow:2px 2px 0 var(--dark); }
+  .share-btn.x-btn  { background:#000; }
+  .share-btn.line-btn { background:#06C755; }
+  .share-btn.fb-btn { background:#1877F2; }
+  .share-btn.ig-btn { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); grid-column:1/-1; }
+  .share-btn svg    { width:20px; height:20px; fill:white; flex-shrink:0; }
+
+  .toast {
+    position:fixed; bottom:30px; left:50%;
+    transform:translateX(-50%) translateY(80px);
+    background:var(--dark); color:white;
+    padding:12px 24px; border-radius:99px;
+    font-size:14px; font-weight:700;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);
+    transition:transform .3s cubic-bezier(0.34,1.56,0.64,1),opacity .3s;
+    opacity:0; z-index:999; white-space:nowrap;
+  }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  .retry-btn { display:block; width:100%; padding:16px; background:var(--yellow); border:3px solid var(--dark); border-radius:16px; font-family:'Zen Maru Gothic',sans-serif; font-size:18px; font-weight:900; color:var(--dark); cursor:pointer; box-shadow:5px 5px 0 var(--dark); transition:transform .15s,box-shadow .15s; }
+  .retry-btn:hover  { transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--dark); }
+  .retry-btn:active { transform:translate(1px,1px);   box-shadow:3px 3px 0 var(--dark); }
+
+  .start-emoji { font-size:72px; text-align:center; margin:8px 0 16px; }
+  .start-desc  { text-align:center; font-size:15px; color:#666; line-height:1.7; margin-bottom:24px; }
+  .start-btn   { display:block; width:100%; padding:18px; background:linear-gradient(135deg,var(--pink),var(--purple)); border:3px solid var(--dark); border-radius:16px; font-family:'Zen Maru Gothic',sans-serif; font-size:20px; font-weight:900; color:white; cursor:pointer; box-shadow:5px 5px 0 var(--dark); transition:transform .15s,box-shadow .15s; text-shadow:1px 1px 0 rgba(0,0,0,.2); }
+  .start-btn:hover { transform:translate(-2px,-2px); box-shadow:7px 7px 0 var(--dark); }
+</style>
+</head>
+<body>
+
+<div class="bubbles" id="bubbles"></div>
+<div class="toast" id="toast">📋 コピーしました！Instagramに貼り付けてね✨</div>
+
+<div class="container">
+  <div class="header">
+    <div class="badge">✨ ANIME CHARACTER QUIZ ✨</div>
+    <h1>あなたは<br>どのキャラ？</h1>
+    <div class="stars">⭐🌟💫🌟⭐</div>
+    <p>5つの質問に答えてキャラクターを診断！</p>
+  </div>
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+const questions = [
+  { text:"休日の過ごし方は？", choices:[
+    { icon:"🏋️", text:"体を動かして全力で遊ぶ！", scores:{battle:2,calm:0,social:1,dark:0,genius:0} },
+    { icon:"📚", text:"家でじっくり本や研究",       scores:{battle:0,calm:1,social:0,dark:0,genius:2} },
+    { icon:"🎉", text:"友達と賑やかに過ごす",       scores:{battle:0,calm:0,social:2,dark:0,genius:0} },
+    { icon:"🌙", text:"一人でゆっくり考え事",       scores:{battle:0,calm:2,social:0,dark:1,genius:1} },
+  ]},
+  { text:"ピンチのとき、あなたは？", choices:[
+    { icon:"⚡", text:"熱くなって突っ込む！",       scores:{battle:2,calm:0,social:0,dark:0,genius:0} },
+    { icon:"🧠", text:"冷静に分析して策を立てる",   scores:{battle:0,calm:1,social:0,dark:0,genius:2} },
+    { icon:"🤝", text:"仲間と力を合わせる",         scores:{battle:1,calm:0,social:2,dark:0,genius:0} },
+    { icon:"😈", text:"逆に楽しんでしまう",         scores:{battle:0,calm:0,social:0,dark:2,genius:1} },
+  ]},
+  { text:"大切にしているものは？", choices:[
+    { icon:"🔥", text:"夢・目標・信念",             scores:{battle:2,calm:0,social:1,dark:0,genius:0} },
+    { icon:"👨‍👩‍👧", text:"家族・仲間・絆",           scores:{battle:0,calm:1,social:2,dark:0,genius:0} },
+    { icon:"🏆", text:"実力・知識・スキル",         scores:{battle:0,calm:0,social:0,dark:0,genius:2} },
+    { icon:"🗡️", text:"誇り・覚悟・孤独",           scores:{battle:1,calm:1,social:0,dark:2,genius:0} },
+  ]},
+  { text:"あなたのコミュ力は？", choices:[
+    { icon:"📣", text:"誰とでもすぐ友達になれる",   scores:{battle:1,calm:0,social:2,dark:0,genius:0} },
+    { icon:"😤", text:"口下手だが行動で示す",       scores:{battle:2,calm:1,social:0,dark:1,genius:0} },
+    { icon:"🎭", text:"謎めいた雰囲気を出す",       scores:{battle:0,calm:1,social:0,dark:2,genius:1} },
+    { icon:"🤓", text:"論理的に話すのが好き",       scores:{battle:0,calm:0,social:0,dark:0,genius:2} },
+  ]},
+  { text:"戦うとしたら戦い方は？", choices:[
+    { icon:"💥", text:"正面から全力でぶつかる",     scores:{battle:2,calm:0,social:0,dark:0,genius:0} },
+    { icon:"🎯", text:"頭脳で相手を追い詰める",     scores:{battle:0,calm:0,social:0,dark:1,genius:2} },
+    { icon:"🛡️", text:"仲間を守りながら戦う",       scores:{battle:1,calm:1,social:2,dark:0,genius:0} },
+    { icon:"🌀", text:"冷静に急所だけ狙う",         scores:{battle:0,calm:2,social:0,dark:2,genius:1} },
+  ]},
+];
+
+const results = [
+  { type:"battle", name:"孫悟空",   series:"ドラゴンボール", emoji:"🐉", color:"#FF6B9D",
+    desc:"純粋な闘志と底抜けの明るさを持つ戦闘型主人公タイプ！困難があるほど燃え上がり、仲間のために全力を尽くす。無邪気でまっすぐなあなたは、気づかないうちに周りを引っ張るリーダー的存在。",
+    tags:["🔥 熱血","💪 最強","😄 天真爛漫","👊 主人公オーラ"], tagColors:["#FF6B9D","#FF8C42","#FFD93D","#6BCB77"] },
+  { type:"genius", name:"夜神月",   series:"デスノート",     emoji:"📓", color:"#A855F7",
+    desc:"天才的な頭脳と強烈な正義感（または野心）を持つ策士タイプ。常に数手先を読み、自分の信念に絶対的な自信を持っている。周りからは少し近づきがたく見えるかも。",
+    tags:["🧠 天才","👑 カリスマ","😏 策略家","⚡ 完璧主義"], tagColors:["#A855F7","#FF6B9D","#4ECDC4","#FF8C42"] },
+  { type:"social", name:"ナルト",   series:"NARUTO",         emoji:"🍥", color:"#FF8C42",
+    desc:"仲間への愛と熱い絆を何より大切にするムードメーカータイプ！諦めない精神力と人を惹きつけるパワーで、どんな逆境も乗り越えていく。一緒にいると元気になれる存在。",
+    tags:["🤝 絆重視","🌟 不屈の精神","😁 ムードメーカー","🎯 努力の人"], tagColors:["#FF8C42","#FFD93D","#6BCB77","#4ECDC4"] },
+  { type:"dark",   name:"リヴァイ・アッカーマン", series:"進撃の巨人", emoji:"⚔️", color:"#4ECDC4",
+    desc:"孤高のプロフェッショナル。無駄のない行動と圧倒的な実力を持ち、口数は少ないが誰よりも覚悟が決まっている。近寄りがたいオーラがあるが、実は深いところで仲間を想っている。",
+    tags:["🗡️ 孤高","😤 寡黙","💎 超一流","🌙 ダークヒーロー"], tagColors:["#4ECDC4","#A855F7","#FF6B9D","#1a1a2e"] },
+  { type:"calm",   name:"ロロノア・ゾロ", series:"ワンピース", emoji:"🗡️", color:"#6BCB77",
+    desc:"不言実行の鋼鉄メンタル。自分の目標に向かってブレずに突き進む意志の強さが最大の武器。寡黙だが仲間への信頼は誰より厚く、いざというときに頼りになる存在。",
+    tags:["🎯 目標一筋","💪 無口","🏆 実力主義","🌿 頼れる兄貴"], tagColors:["#6BCB77","#FF8C42","#A855F7","#4ECDC4"] },
+];
+
+/* Bubbles */
+const bColors=["#FF6B9D","#FFD93D","#4ECDC4","#A855F7","#FF8C42","#6BCB77"];
+(function(){
+  const wrap=document.getElementById('bubbles');
+  for(let i=0;i<18;i++){
+    const b=document.createElement('div'); b.className='bubble';
+    const s=40+Math.random()*120;
+    b.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;background:${bColors[Math.floor(Math.random()*bColors.length)]};animation-duration:${8+Math.random()*12}s;animation-delay:${-Math.random()*15}s;`;
+    wrap.appendChild(b);
+  }
+})();
+
+let current=0, scores={}, selected=null, lastResult=null;
+
+/* Share helpers */
+function buildText(r){
+  return `【アニメキャラ診断】\n私は「${r.name}（${r.series}）」タイプでした！${r.emoji}\n${r.tags.join(' ')}\nあなたも試してみて👇 #アニメキャラ診断 #アニメ`;
+}
+
+function shareX(){ window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
+function shareLine(){ window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
+function shareFB(){ window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}`,'_blank'); }
+function shareThreads(){ window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
+function copyIG(){
+  const text=buildText(lastResult)+'\n\n#診断 #アニメ好きと繋がりたい #キャラ診断';
+  const fn=()=>{
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3000);
+  };
+  if(navigator.clipboard){ navigator.clipboard.writeText(text).then(fn); }
+  else {
+    const ta=document.createElement('textarea'); ta.value=text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); fn();
+  }
+}
+
+function shareButtons(r){
+  return `
+  <div class="share-section">
+    <div class="share-title">📣 友達にシェアしよう！</div>
+    <div class="share-grid">
+      <button class="share-btn x-btn" onclick="shareX()">
+        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.629 5.905-5.629zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        X でポスト
+      </button>
+      <button class="share-btn line-btn" onclick="shareLine()">
+        <svg viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        LINE
+      </button>
+      <button class="share-btn fb-btn" onclick="shareFB()">
+        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        Facebook
+      </button>
+      <button class="share-btn threads-btn" onclick="shareThreads()" style="background:#101010;color:#fff;border-color:#101010;box-shadow:3px 3px 0 #101010">
+        <svg viewBox="0 0 24 24" fill="white"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.5 12.068c0-3.516.85-6.37 2.495-8.423C5.845 1.341 8.598.16 12.18.136h.014c2.752.018 5.043.751 6.61 2.121 1.494 1.306 2.28 3.12 2.338 5.393l.003.148h-3.39l-.004-.132c-.058-1.49-.51-2.637-1.368-3.415-.902-.817-2.22-1.25-3.915-1.261h-.008c-2.119.014-3.82.738-5.062 2.15C6.195 6.588 5.58 8.573 5.58 12.068c0 3.498.616 5.483 1.816 6.935 1.241 1.413 2.941 2.135 5.055 2.149h.007c1.916-.013 3.373-.579 4.334-1.682.803-.921 1.247-2.228 1.33-3.89H15.13c-.105 1.1-.452 1.95-1.073 2.572-.715.717-1.748 1.09-3.07 1.09h-.005c-1.383 0-2.474-.437-3.241-1.3-.826-.929-1.244-2.326-1.244-4.153 0-1.827.418-3.224 1.244-4.153.767-.863 1.858-1.3 3.241-1.3h.005c1.322 0 2.355.373 3.07 1.09.713.718 1.056 1.75 1.056 3.063 0 .223-.015.443-.043.656l-.003.025h-3.098l.003-.048c.016-.228.024-.427.024-.633 0-.721-.178-1.265-.544-1.664-.348-.379-.86-.571-1.465-.571-.804 0-1.408.298-1.843.912-.437.617-.659 1.537-.659 2.738 0 1.2.222 2.12.659 2.737.435.614 1.04.912 1.843.912.605 0 1.117-.192 1.465-.572.37-.403.548-.96.548-1.694v-.002h3.09l-.003.05c-.083 1.622-.527 2.93-1.33 3.852C15.56 23.421 14.102 23.987 12.186 24z"/></svg>
+        Threads
+      </button>
+    </div>
+    <button class="share-btn ig-btn" onclick="copyIG()" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;border-color:#cc2366;box-shadow:3px 3px 0 #cc2366">
+      <svg viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      📋 Instagramにコピー
+    </button>
+  </div>`;
+}
+
+/* Screens */
+function anim(card, name){ card.style.animation='none'; card.offsetHeight; card.style.animation=`${name} 0.5s cubic-bezier(0.34,1.56,0.64,1)`; }
+
+function renderStart(){
+  const card=document.getElementById('card'); anim(card,'popIn');
+  card.innerHTML=`
+    <div class="start-emoji">🎌✨</div>
+    <h2 style="font-family:'Zen Maru Gothic',sans-serif;font-size:22px;font-weight:900;text-align:center;margin-bottom:12px;color:var(--dark)">アニメキャラ診断</h2>
+    <p class="start-desc">5つの質問に答えると、あなたにそっくりな<br>アニメキャラクターを診断します！<br>直感でどんどん答えてみて🌟</p>
+    <button class="start-btn" onclick="startQuiz()">診断スタート！🚀</button>`;
+}
+
+function startQuiz(){ current=0; scores={battle:0,calm:0,social:0,dark:0,genius:0}; selected=null; renderQuestion(); }
+
+function renderQuestion(){
+  selected=null;
+  const q=questions[current], card=document.getElementById('card');
+  anim(card,'slideIn');
+  const pct=(current/questions.length)*100;
+  card.innerHTML=`
+    <div class="progress-wrap">
+      <div class="progress-label"><span>質問 ${current+1} / ${questions.length}</span><span>${Math.round(pct)}%</span></div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="question-num">QUESTION ${current+1}</div>
+    <div class="question-text">${q.text}</div>
+    <div class="choices">${q.choices.map((c,i)=>`
+      <button class="choice-btn" id="c${i}" onclick="pick(${i})">
+        <span class="choice-icon">${c.icon}</span><span>${c.text}</span>
+      </button>`).join('')}</div>
+    <div id="nxt" style="margin-top:20px;display:none">
+      <button class="retry-btn" style="background:linear-gradient(135deg,var(--pink),var(--purple));color:white;text-shadow:1px 1px 0 rgba(0,0,0,.2)" onclick="next()">
+        ${current<questions.length-1?'次の質問へ →':'結果を見る！🎉'}
+      </button>
+    </div>`;
+}
+
+function pick(i){
+  selected=i;
+  const cols=["#FF6B9D","#4ECDC4","#FFD93D","#A855F7"];
+  questions[current].choices.forEach((_,j)=>{
+    const b=document.getElementById(`c${j}`);
+    b.classList.toggle('selected',j===i);
+    b.style.background=j===i?cols[i%cols.length]:'white';
+  });
+  document.getElementById('nxt').style.display='block';
+}
+
+function next(){
+  if(selected===null)return;
+  Object.entries(questions[current].choices[selected].scores).forEach(([k,v])=>scores[k]+=v);
+  current++;
+  current<questions.length?renderQuestion():showResult();
+}
+
+function showResult(){
+  const top=Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+  const r=results.find(x=>x.type===top)||results[0];
+  lastResult=r;
+  const card=document.getElementById('card'); anim(card,'popIn');
+  card.innerHTML=`
+    <div style="background:linear-gradient(135deg,${r.color}22,${r.color}44);border:2px solid ${r.color};border-radius:16px;padding:20px;margin-bottom:20px">
+      <div class="result-label">あなたのキャラクターは…</div>
+      <div class="result-avatar">${r.emoji}</div>
+      <div class="result-name">${r.name}</div>
+      <div class="result-series">📺 ${r.series}</div>
+    </div>
+    <div class="result-desc">${r.desc}</div>
+    <div class="tags">${r.tags.map((t,i)=>`<span class="tag" style="background:${r.tagColors[i]}22;border-color:${r.tagColors[i]};color:${r.tagColors[i]}">${t}</span>`).join('')}</div>
+    ${shareButtons(r)}
+    <div style="background:#fff8f0;border:2.5px solid #ff8c42;border-radius:16px;padding:16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:12px;font-weight:900;color:#ff8c42;letter-spacing:2px;margin-bottom:10px">🛒 アニメグッズはこちら</div>
+      <a href="https://px.a8.net/svt/ejp?a8mat=4AZPOO+DYHYFM+NA2+67JU9" rel="nofollow">
+        <img border="0" width="300" height="250" alt="" src="https://www23.a8.net/svt/bgt?aid=260327112844&wid=005&eno=01&mid=s00000003017001043000&mc=1" style="max-width:100%;border-radius:8px">
+      </a>
+      <img border="0" width="1" height="1" src="https://www13.a8.net/0.gif?a8mat=4AZPOO+DYHYFM+NA2+67JU9" alt="">
+    </div>
+    <button class="retry-btn" onclick="renderStart()">🔄 もう一度診断する</button>`;
+}
+
+renderStart();
+</script>
+</body>
+</html>
