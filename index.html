@@ -186,13 +186,15 @@ const bColors=["#FF6B9D","#FFD93D","#4ECDC4","#A855F7","#FF8C42","#6BCB77"];
 let current=0, scores={}, selected=null, lastResult=null;
 
 /* Share helpers */
+const QUIZ_URL = 'https://hasegawa08.github.io/anime-quiz/';
+
 function buildText(r){
-  return `【アニメキャラ診断】\n私は「${r.name}（${r.series}）」タイプでした！${r.emoji}\n${r.tags.join(' ')}\nあなたも試してみて👇 #アニメキャラ診断 #アニメ`;
+  return `【アニメキャラ診断】\n私は「${r.name}（${r.series}）」タイプでした！${r.emoji}\n${r.tags.join(' ')}\nあなたも試してみて👇\n${QUIZ_URL}\n#アニメキャラ診断 #アニメ`;
 }
 
 function shareX(){ window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
-function shareLine(){ window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
-function shareFB(){ window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(location.href)}`,'_blank'); }
+function shareLine(){ window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(QUIZ_URL)}&text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
+function shareFB(){ window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(QUIZ_URL)}`,'_blank'); }
 function shareThreads(){ window.open(`https://www.threads.net/intent/post?text=${encodeURIComponent(buildText(lastResult))}`,'_blank'); }
 function copyIG(){
   const text=buildText(lastResult)+'\n\n#診断 #アニメ好きと繋がりたい #キャラ診断';
